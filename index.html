@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#17130E">
+<title>Parler Anglais</title>
+<style>
+:root{
+  --bg:#17130E; --panel:#221C14; --panel2:#2C2418; --line:#3A3022;
+  --cream:#F3E9D4; --muted:#A89878; --orange:#FF7A2F; --orange-soft:#FF7A2F22;
+  --green:#8FC97E; --red:#E26D5A; --blue:#7EB8C9;
+  --radius:18px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--cream);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  display:flex; flex-direction:column; overflow:hidden;
+  padding-top:env(safe-area-inset-top);
+}
+header{
+  padding:14px 18px 10px; display:flex; align-items:center; justify-content:space-between;
+}
+header h1{font-size:20px; letter-spacing:.5px; font-weight:800}
+header h1 span{color:var(--orange)}
+.streak-pill{
+  background:var(--panel); border:1px solid var(--line); border-radius:99px;
+  padding:6px 12px; font-size:13px; font-weight:700; display:flex; gap:10px;
+}
+main{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 16px 20px}
+.screen{display:none}
+.screen.active{display:block}
+h2{font-size:15px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin:14px 0 10px; font-weight:700}
+.card{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px; margin-bottom:12px;
+}
+button{font-family:inherit; border:none; cursor:pointer; color:inherit; background:none}
+.btn{
+  background:var(--orange); color:#1A1106; font-weight:800; font-size:16px;
+  border-radius:14px; padding:14px 20px; width:100%;
+}
+.btn:disabled{opacity:.4}
+.btn-ghost{
+  background:var(--panel2); color:var(--cream); font-weight:700; font-size:14px;
+  border-radius:12px; padding:12px 16px; border:1px solid var(--line);
+}
+.row{display:flex; gap:10px}
+.row > *{flex:1}
+
+/* ===== Tabs ===== */
+nav{
+  display:flex; background:var(--panel); border-top:1px solid var(--line);
+  padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+}
+nav button{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+  color:var(--muted); font-size:10.5px; font-weight:700; padding:6px 0;
+}
+nav button .ico{font-size:20px}
+nav button.active{color:var(--orange)}
+
+/* ===== Conversation ===== */
+#chatBox{display:flex; flex-direction:column; gap:10px; padding:8px 0; min-height:120px}
+.msg{max-width:85%; padding:11px 14px; border-radius:16px; font-size:15px; line-height:1.45}
+.msg.ai{background:var(--panel); border:1px solid var(--line); align-self:flex-start; border-bottom-left-radius:4px}
+.msg.me{background:var(--orange); color:#1A1106; font-weight:600; align-self:flex-end; border-bottom-right-radius:4px}
+.msg .tip{
+  margin-top:8px; padding-top:8px; border-top:1px dashed var(--line);
+  font-size:13px; color:var(--blue);
+}
+.msg .speak-again{margin-top:6px; font-size:12px; color:var(--muted); font-weight:700}
+.chips{display:flex; gap:8px; overflow-x:auto; padding:6px 0 10px; scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips button{
+  white-space:nowrap; background:var(--panel2); border:1px solid var(--line);
+  border-radius:99px; padding:8px 14px; font-size:13px; font-weight:700; color:var(--cream);
+}
+#convoControls{
+  position:sticky; bottom:0; background:linear-gradient(transparent, var(--bg) 30%);
+  padding:14px 0 4px; display:flex; flex-direction:column; align-items:center; gap:8px;
+}
+.mic-btn{
+  width:84px; height:84px; border-radius:50%;
+  background:var(--orange); color:#1A1106; font-size:34px;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 0 0 0 var(--orange-soft);
+  transition:transform .15s;
+}
+.mic-btn:active{transform:scale(.93)}
+.mic-btn.listening{animation:pulse 1.2s infinite; background:var(--red); color:#fff}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(226,109,90,.55)}
+  100%{box-shadow:0 0 0 26px rgba(226,109,90,0)}
+}
+#micHint{font-size:13px; color:var(--muted); font-weight:600; min-height:18px; text-align:center}
+#typedRow{display:flex; gap:8px; width:100%}
+#typedInput{
+  flex:1; background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  padding:12px; color:var(--cream); font-size:15px; font-family:inherit;
+}
+#typedInput::placeholder{color:var(--muted)}
+
+/* ===== Prononciation ===== */
+.phrase-big{font-size:24px; font-weight:800; line-height:1.3; margin:6px 0 4px}
+.phrase-fr{color:var(--muted); font-size:14px; margin-bottom:14px}
+.score-words{margin:12px 0; line-height:1.8; font-size:17px}
+.score-words .ok{color:var(--green); font-weight:700}
+.score-words .ko{color:var(--red); text-decoration:line-through}
+.score-badge{
+  font-size:34px; font-weight:900; text-align:center; margin:6px 0;
+}
+.lvl-tabs{display:flex; gap:8px; margin-bottom:12px}
+.lvl-tabs button{
+  flex:1; background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+  padding:9px 0; font-size:13px; font-weight:700; color:var(--muted);
+}
+.lvl-tabs button.active{background:var(--orange-soft); border-color:var(--orange); color:var(--orange)}
+
+/* ===== Écrire ===== */
+.mode-tabs{display:flex; gap:8px; margin-bottom:12px}
+.mode-tabs button{
+  flex:1; background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+  padding:9px 0; font-size:12.5px; font-weight:700; color:var(--muted);
+}
+.mode-tabs button.active{background:var(--orange-soft); border-color:var(--orange); color:var(--orange)}
+.word-bank,.word-answer{display:flex; flex-wrap:wrap; gap:8px; min-height:46px; padding:8px;
+  border-radius:12px; margin:8px 0}
+.word-answer{background:var(--panel2); border:1px dashed var(--line)}
+.word-chip{
+  background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+  padding:8px 12px; font-size:15px; font-weight:700; color:var(--cream);
+}
+.word-answer .word-chip{background:var(--orange-soft); border-color:var(--orange)}
+.write-input{
+  width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:12px;
+  padding:12px; color:var(--cream); font-size:16px; font-family:inherit; margin:8px 0;
+}
+.write-result{margin-top:10px; font-size:15px; line-height:1.6}
+.write-result .good{color:var(--green); font-weight:800}
+.write-result .bad{color:var(--red); font-weight:800}
+
+/* ===== Cartes ===== */
+.flashcard{
+  min-height:200px; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; text-align:center; gap:10px;
+}
+.flashcard .front{font-size:26px; font-weight:800}
+.flashcard .back{font-size:24px; font-weight:800; color:var(--orange)}
+.flashcard .example{font-size:14px; color:var(--muted); font-style:italic}
+.grade-row{display:flex; gap:8px; margin-top:4px}
+.grade-row button{flex:1; border-radius:12px; padding:13px 0; font-weight:800; font-size:14px}
+.g-again{background:#4A2A22; color:var(--red)}
+.g-good{background:#2E3A26; color:var(--green)}
+.g-easy{background:#22333A; color:var(--blue)}
+.due-count{font-size:13px; color:var(--muted); text-align:center; margin-bottom:10px; font-weight:700}
+
+/* ===== Progrès ===== */
+.stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.stat{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px}
+.stat .num{font-size:28px; font-weight:900; color:var(--orange)}
+.stat .lbl{font-size:12px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:1px}
+.goal-ring{height:10px; background:var(--panel2); border-radius:99px; overflow:hidden; margin-top:8px}
+.goal-ring div{height:100%; background:var(--green); border-radius:99px; transition:width .4s}
+.plan li{margin:8px 0 8px 18px; font-size:14px; line-height:1.5}
+.plan b{color:var(--orange)}
+
+/* ===== Réglages ===== */
+label{display:block; font-size:13px; font-weight:700; color:var(--muted); margin:14px 0 6px}
+input[type=text],input[type=password],select{
+  width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:12px;
+  padding:12px; color:var(--cream); font-size:15px; font-family:inherit;
+}
+input[type=range]{width:100%; accent-color:var(--orange)}
+.note{font-size:13px; color:var(--muted); line-height:1.5; margin-top:8px}
+.note a{color:var(--blue)}
+.ok-dot{color:var(--green); font-weight:800}
+.warn{background:#3A2A18; border:1px solid #5A4020; border-radius:12px; padding:12px; font-size:13px; line-height:1.5; margin-bottom:12px; color:#E8C99A}
+
+#toast{
+  position:fixed; left:50%; bottom:110px; transform:translateX(-50%) translateY(20px);
+  background:var(--cream); color:#1A1106; font-weight:800; font-size:14px;
+  padding:10px 18px; border-radius:99px; opacity:0; pointer-events:none; transition:all .3s;
+  z-index:99; white-space:nowrap;
+}
+#toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Parler <span>Anglais</span></h1>
+  <div class="streak-pill"><span>🔥 <b id="streakNum">0</b></span><span>⭐ <b id="xpNum">0</b></span></div>
+</header>
+
+<main>
+
+<!-- ============ CONVERSATION ============ -->
+<section class="screen active" id="screen-talk">
+  <div id="noKeyWarn" class="warn" style="display:none">
+    🔑 Ajoute ta clé Gemini gratuite dans <b>Réglages</b> pour activer la conversation IA. Le reste de l'app fonctionne sans.
+  </div>
+  <div class="chips" id="topicChips">
+    <button data-topic="everyday small talk (weather, weekend, plans, food)">☕ Small talk</button>
+    <button data-topic="ordering food at a restaurant: the AI plays the waiter">🍽️ Au restaurant</button>
+    <button data-topic="shopping in a store: sizes, prices, paying. The AI plays the shop assistant">🛍️ Faire les courses</button>
+    <button data-topic="asking for and giving directions in a city">🗺️ Demander son chemin</button>
+    <button data-topic="meeting someone new: introductions, where you are from, hobbies">👋 Rencontrer quelqu'un</button>
+    <button data-topic="traveling: airport, hotel check-in, booking">✈️ Voyage</button>
+    <button data-topic="making a phone call to book an appointment">📞 Au téléphone</button>
+    <button data-topic="selling a vintage item to a buyer: condition, price, shipping">🛋️ Vendre un objet</button>
+  </div>
+  <div id="chatBox"></div>
+  <div id="convoControls">
+    <button class="mic-btn" id="micBtn">🎤</button>
+    <div id="micHint">Appuie et parle en anglais</div>
+    <div id="typedRow">
+      <input type="text" id="typedInput" placeholder="Ou écris en anglais…" autocomplete="off">
+      <button class="btn-ghost" id="typedSend" style="flex:0 0 auto">➤</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRONONCIATION ============ -->
+<section class="screen" id="screen-pronounce">
+  <h2>Répète après moi</h2>
+  <div class="lvl-tabs" id="pronLvlTabs">
+    <button data-lvl="0" class="active">Débutant</button>
+    <button data-lvl="1">Intermédiaire</button>
+    <button data-lvl="2">Avancé</button>
+  </div>
+  <div class="card">
+    <div class="phrase-big" id="pronPhrase"></div>
+    <div class="phrase-fr" id="pronFr"></div>
+    <div class="row">
+      <button class="btn-ghost" id="pronPlay">🔊 Écouter</button>
+      <button class="btn-ghost" id="pronSlow">🐢 Lent</button>
+    </div>
+    <div id="pronResult"></div>
+    <div style="margin-top:12px" class="row">
+      <button class="btn" id="pronRecord">🎤 Je répète</button>
+      <button class="btn-ghost" id="pronNext" style="flex:0 0 auto">Suivant ➜</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ÉCRIRE ============ -->
+<section class="screen" id="screen-write">
+  <h2>Exercices écrits — sans connexion</h2>
+  <div class="mode-tabs" id="writeModeTabs">
+    <button data-mode="order" class="active">🧩 Ordre</button>
+    <button data-mode="translate">✍️ Traduire</button>
+    <button data-mode="dictation">👂 Dictée</button>
+  </div>
+  <div class="lvl-tabs" id="writeLvlTabs">
+    <button data-lvl="0" class="active">Débutant</button>
+    <button data-lvl="1">Intermédiaire</button>
+    <button data-lvl="2">Avancé</button>
+  </div>
+  <div class="card">
+    <div id="writePrompt" class="phrase-fr" style="font-size:16px;color:var(--cream);margin-bottom:6px"></div>
+    <div id="writeZone"></div>
+    <div id="writeResult" class="write-result"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" id="writeCheck">Vérifier</button>
+      <button class="btn-ghost" id="writeNext" style="flex:0 0 auto">Suivant ➜</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CARTES ============ -->
+<section class="screen" id="screen-cards">
+  <h2>Vocabulaire — répétition espacée</h2>
+  <div class="due-count" id="dueCount"></div>
+  <div class="card flashcard" id="flashcard">
+    <div class="front" id="cardFront"></div>
+    <div id="cardBackZone" style="display:none">
+      <div class="back" id="cardBack"></div>
+      <div class="example" id="cardExample"></div>
+      <button class="btn-ghost" id="cardSpeak" style="margin-top:10px">🔊 Écouter</button>
+    </div>
+  </div>
+  <button class="btn" id="cardReveal">Voir la réponse</button>
+  <div class="grade-row" id="gradeRow" style="display:none">
+    <button class="g-again" data-g="0">Encore<br>10 min</button>
+    <button class="g-good" data-g="1">Bien<br>✓</button>
+    <button class="g-easy" data-g="2">Facile<br>✓✓</button>
+  </div>
+</section>
+
+<!-- ============ PROGRÈS ============ -->
+<section class="screen" id="screen-progress">
+  <h2>Objectif du jour</h2>
+  <div class="card">
+    <b id="goalTxt"></b>
+    <div class="goal-ring"><div id="goalBar" style="width:0%"></div></div>
+  </div>
+  <h2>Statistiques</h2>
+  <div class="stat-grid">
+    <div class="stat"><div class="num" id="stXp">0</div><div class="lbl">XP total</div></div>
+    <div class="stat"><div class="num" id="stStreak">0</div><div class="lbl">Jours de suite</div></div>
+    <div class="stat"><div class="num" id="stConvo">0</div><div class="lbl">Messages parlés</div></div>
+    <div class="stat"><div class="num" id="stCards">0</div><div class="lbl">Cartes révisées</div></div>
+  </div>
+  <h2>Routine quotidienne (15-20 min)</h2>
+  <div class="card plan" style="font-size:14px; line-height:1.6">
+    <b>1.</b> 🃏 Cartes du jour (5 min) → <b>2.</b> 🎤 5 phrases répétées (5 min) → <b>3.</b> 💬 1 conversation IA sur le thème de la semaine (10 min). <b style="color:var(--orange)">Tous les jours, même fatigué.</b>
+  </div>
+  <h2>Plan 6 mois — semaine par semaine</h2>
+  <div id="planList"></div>
+  <h2>Mise à jour avec Claude</h2>
+  <div class="card">
+    <button class="btn" id="exportClaude">📤 Exporter ma progression pour Claude</button>
+    <div class="note">Chaque dimanche : exporte ce fichier, envoie-le à Claude dans une conversation. Claude analyse tes points faibles et te renvoie un fichier de mise à jour (nouvelles phrases + nouveau vocabulaire adaptés). Importe-le dans ⚙️ Réglages → Importer.</div>
+  </div>
+</section>
+
+<!-- ============ RÉGLAGES ============ -->
+<section class="screen" id="screen-settings">
+  <h2>Réglages</h2>
+  <div class="card">
+    <label>Clé API Gemini (gratuite) <span id="keyOk"></span></label>
+    <input type="password" id="apiKey" placeholder="AIza...">
+    <div class="note">
+      1. Va sur <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a><br>
+      2. Connecte-toi avec un compte Google → « Create API key »<br>
+      3. Colle la clé ici. C'est gratuit et stocké uniquement sur ton téléphone.
+    </div>
+    <label>Mon niveau (pour l'IA)</label>
+    <select id="levelSel">
+      <option value="beginner">Débutant — phrases courtes et simples</option>
+      <option value="intermediate">Intermédiaire</option>
+      <option value="advanced">Avancé</option>
+    </select>
+    <label>Vitesse de la voix : <span id="rateVal">0.95</span></label>
+    <input type="range" id="rateSlider" min="0.6" max="1.2" step="0.05" value="0.95">
+    <label>Voix anglaise</label>
+    <select id="voiceSel"></select>
+    <button class="btn-ghost" id="testVoice" style="margin-top:12px">🔊 Tester la voix</button>
+  </div>
+  <div class="card">
+    <label style="margin-top:0">Sauvegarde</label>
+    <div class="row">
+      <button class="btn-ghost" id="exportBtn">⬇️ Exporter</button>
+      <button class="btn-ghost" id="importBtn">⬆️ Importer</button>
+    </div>
+    <input type="file" id="importFile" accept=".json" style="display:none">
+    <div class="note">Exporte ta progression en JSON (XP, streak, cartes) pour ne rien perdre.</div>
+  </div>
+</section>
+
+</main>
+
+<nav>
+  <button class="active" data-screen="talk"><span class="ico">💬</span>Parler</button>
+  <button data-screen="pronounce"><span class="ico">🎤</span>Répéter</button>
+  <button data-screen="write"><span class="ico">✍️</span>Écrire</button>
+  <button data-screen="cards"><span class="ico">🃏</span>Cartes</button>
+  <button data-screen="progress"><span class="ico">📊</span>Progrès</button>
+  <button data-screen="settings"><span class="ico">⚙️</span>Réglages</button>
+</nav>
+
+<div id="toast"></div>
+<script>
+/* ================== DATA ================== */
+const PHRASES = [
+[ // débutant
+["Hello, how are you today?","Bonjour, comment vas-tu aujourd'hui ?"],
+["My name is Hamid, nice to meet you.","Je m'appelle Hamid, enchanté."],
+["I'm from France, and you?","Je viens de France, et toi ?"],
+["I would like a table for two, please.","Je voudrais une table pour deux, s'il vous plaît."],
+["Can I see the menu, please?","Je peux voir le menu, s'il vous plaît ?"],
+["I'll have the chicken and a glass of water.","Je vais prendre le poulet et un verre d'eau."],
+["The bill, please.","L'addition, s'il vous plaît."],
+["How much does it cost?","Combien ça coûte ?"],
+["Can I pay by card?","Je peux payer par carte ?"],
+["Where are the toilets, please?","Où sont les toilettes, s'il vous plaît ?"],
+["I'm looking for the train station.","Je cherche la gare."],
+["Turn left, then go straight.","Tournez à gauche, puis tout droit."],
+["What time do you open?","À quelle heure ouvrez-vous ?"],
+["I don't understand, can you speak slowly?","Je ne comprends pas, vous pouvez parler lentement ?"],
+["I'm learning English, sorry for my mistakes.","J'apprends l'anglais, désolé pour mes erreurs."],
+["Have a nice day, goodbye!","Bonne journée, au revoir !"]
+],
+[ // intermédiaire
+["Could we get a table by the window?","On pourrait avoir une table près de la fenêtre ?"],
+["What do you recommend on the menu?","Qu'est-ce que vous recommandez sur le menu ?"],
+["Excuse me, I think there's a mistake in the bill.","Excusez-moi, je crois qu'il y a une erreur dans l'addition."],
+["I'm allergic to nuts, is there any in this dish?","Je suis allergique aux noix, il y en a dans ce plat ?"],
+["Do you have this in a bigger size?","Vous l'avez en plus grande taille ?"],
+["I'm just looking, thank you.","Je regarde juste, merci."],
+["Could you tell me how to get to the city center?","Vous pouvez me dire comment aller au centre-ville ?"],
+["Is it within walking distance or should I take a bus?","C'est accessible à pied ou je dois prendre un bus ?"],
+["I'd like to make an appointment for next week.","Je voudrais prendre rendez-vous pour la semaine prochaine."],
+["Sorry I'm late, the traffic was terrible.","Désolé pour le retard, la circulation était horrible."],
+["What did you do last weekend?","Qu'est-ce que tu as fait le week-end dernier ?"],
+["I've been living in Normandy for ten years.","J'habite en Normandie depuis dix ans."],
+["Could you ship this item to the United States?","Vous pouvez expédier cet article aux États-Unis ?"],
+["Let me check and I'll get back to you.","Laisse-moi vérifier et je reviens vers toi."]
+],
+[ // avancé
+["If I'd known earlier, I would have booked a table.","Si j'avais su plus tôt, j'aurais réservé une table."],
+["The food was delicious, my compliments to the chef.","C'était délicieux, mes compliments au chef."],
+["I was wondering if you could give me a hand with this.","Je me demandais si tu pouvais me donner un coup de main."],
+["To be honest, I'd rather stay home tonight.","Pour être honnête, je préfère rester à la maison ce soir."],
+["I can't make it on Friday, can we reschedule?","Je ne peux pas vendredi, on peut reporter ?"],
+["It took me a while to get used to the accent.","Il m'a fallu du temps pour m'habituer à l'accent."],
+["What I love about my job is meeting people from everywhere.","Ce que j'aime dans mon métier, c'est rencontrer des gens de partout."],
+["Would you mind keeping an eye on my bag for a minute?","Ça t'ennuie de surveiller mon sac une minute ?"],
+["Feel free to make me an offer, the worst I can say is no.","N'hésite pas à me faire une offre, au pire je dis non."],
+["Considering its rarity, the price is actually quite reasonable.","Vu sa rareté, le prix est en fait très raisonnable."],
+["I'm trying to think in English instead of translating in my head.","J'essaie de penser en anglais au lieu de traduire dans ma tête."],
+["The earlier you start, the easier it gets.","Plus tu commences tôt, plus c'est facile."]
+]
+];
+
+const VOCAB = [
+// Restaurant & nourriture
+["commander","to order","I'd like to order, please."],
+["l'addition","the bill","Can we have the bill?"],
+["le plat","the dish","This dish looks amazing."],
+["la boisson","the drink","What drinks do you have?"],
+["le petit-déjeuner","breakfast","Breakfast is at eight."],
+["le déjeuner","lunch","Let's have lunch together."],
+["le dîner","dinner","Dinner is ready."],
+["délicieux","delicious","The cake was delicious."],
+["avoir faim","to be hungry","I'm so hungry!"],
+["avoir soif","to be thirsty","Are you thirsty?"],
+["réserver","to book","I booked a table for two."],
+["le serveur","the waiter","The waiter was very nice."],
+// Courses & magasins
+["le magasin","the shop / the store","The shop opens at nine."],
+["faire les courses","to go shopping","I go shopping on Saturdays."],
+["la taille","the size","Do you have my size?"],
+["essayer","to try on","Can I try it on?"],
+["la caisse","the checkout","Pay at the checkout."],
+["en solde","on sale","Everything is on sale."],
+["la monnaie","the change","Keep the change."],
+["cher / pas cher","expensive / cheap","It's too expensive."],
+// Directions & transport
+["à gauche","left / on the left","Turn left here."],
+["à droite","right / on the right","It's on the right."],
+["tout droit","straight ahead","Go straight ahead."],
+["près de","near","It's near the church."],
+["loin","far","Is it far from here?"],
+["la rue","the street","I live on this street."],
+["prendre le bus","to take the bus","I take the bus every day."],
+["perdu","lost","Sorry, I'm lost."],
+// Temps & quotidien
+["aujourd'hui","today","I'm busy today."],
+["demain","tomorrow","See you tomorrow."],
+["hier","yesterday","I went to Paris yesterday."],
+["le matin","the morning","I work in the morning."],
+["le soir","the evening","Let's meet in the evening."],
+["un rendez-vous","an appointment","I have an appointment at ten."],
+["en retard","late","Sorry, I'm late."],
+["tôt","early","I wake up early."],
+["la semaine","the week","Next week works for me."],
+["maintenant","now","I'm available now."],
+// Gens & émotions
+["la famille","the family","My family lives in Caen."],
+["les amis","friends","I'm meeting friends tonight."],
+["rencontrer","to meet","Nice to meet you."],
+["discuter","to chat / to talk","We chatted for an hour."],
+["aider","to help","Can you help me?"],
+["content / heureux","happy / glad","I'm glad you came."],
+["fatigué","tired","I'm a bit tired today."],
+["inquiet","worried","Don't be worried."],
+["drôle","funny","That's so funny!"],
+["gentil","kind / nice","She's very kind."],
+// Verbes essentiels
+["acheter","to buy","I want to buy this."],
+["payer","to pay","You can pay by card."],
+["comprendre","to understand","Now I understand."],
+["parler","to speak","I speak a little English."],
+["penser","to think","I think you're right."],
+["savoir / connaître","to know","I don't know yet."],
+["pouvoir","can / to be able to","Can you repeat?"],
+["vouloir","to want","I want to learn fast."],
+["devoir","must / to have to","I have to go now."],
+["trouver","to find","I found a great café."],
+["manger","to eat","Where do you want to eat?"],
+["boire","to drink","I'd like something to drink."],
+// Business vintage (ton métier)
+["le prix","the price","The price is firm."],
+["les frais de port","shipping costs","Shipping costs are included."],
+["le colis","the package","The package arrived today."],
+["l'état (d'un objet)","the condition","It's in great condition."],
+["une remise","a discount","I can offer a discount."],
+["le suivi","tracking","Here is the tracking number."],
+["expédier","to ship","I ship worldwide."],
+["d'occasion / vintage","second-hand / vintage","It's a true vintage piece."],
+// Mots utiles
+["combien ?","how much / how many?","How much is it?"],
+["pourquoi ?","why?","Why not?"],
+["parce que","because","Because I love it."],
+["quelque chose","something","I'll find something."],
+["facile / difficile","easy / difficult","It's getting easier."],
+["tout le monde","everyone / everybody","Everyone says that."]
+];
+
+/* ====== CONTENU ÉVOLUTIF (mises à jour envoyées par Claude) ====== */
+let EXTRA = (()=>{ try{ const e = JSON.parse(localStorage.getItem("paExtra")); if(e && e.vocab) return e; }catch(err){} return {v:1, phrases:[[],[],[]], vocab:[]}; })();
+(EXTRA.phrases||[]).forEach((arr,l)=>{ if(PHRASES[l]) arr.forEach(p=>PHRASES[l].push(p)); });
+(EXTRA.vocab||[]).forEach(v=>{ if(!VOCAB.some(x=>x[1]===v[1])) VOCAB.push(v); });
+
+/* ====== PLAN 6 MOIS (24 semaines) ====== */
+const PLAN = [
+["M1","Se présenter","Conversations « Rencontrer quelqu'un ». 10 cartes/jour."],
+["M1","Au restaurant","Conversations « Au restaurant » + phrases débutant resto."],
+["M1","Faire les courses","Conversations « Faire les courses ». Prix, tailles, payer."],
+["M1","Demander son chemin","Conversations « Demander son chemin ». Directions à voix haute."],
+["M2","Parler de sa journée","Small talk : raconte ta journée à l'IA chaque soir."],
+["M2","Au téléphone","Conversations « Au téléphone » : prendre un rendez-vous."],
+["M2","Famille & loisirs","Small talk : famille, week-end, passions, le vintage."],
+["M2","Bilan mois 2","Refais tous les thèmes. Exporte ta progression pour Claude."],
+["M3","Le passé","Raconte ton week-end dernier, tes trouvailles en brocante (prétérit)."],
+["M3","Le futur","Parle de tes projets : business, voyages (will / going to)."],
+["M3","Donner son avis","I think, in my opinion, I'd rather… sur tous les sujets."],
+["M3","Conversation libre","Plus de thème imposé : 10 min de discussion libre par jour."],
+["M4","Voyage","Aéroport, hôtel, réservation. Conversations « Voyage »."],
+["M4","Problèmes & solutions","Réclamer, expliquer un souci (colis perdu, erreur d'addition…)."],
+["M4","Ton business","Présente HIER en anglais : ce que tu vends, à qui, comment."],
+["M4","Vendre & négocier","Conversations « Vendre un objet » : prix, état, expédition."],
+["M5","Raconter une histoire","Raconte des anecdotes complètes : ta meilleure trouvaille vintage."],
+["M5","Débattre simplement","Donne ton avis et défends-le : pour ou contre, préférences."],
+["M5","Nuancer","However, although, actually, to be honest… enrichis tes phrases."],
+["M5","Vitesse","Réponds vite sans préparer. Phrases avancées en répétition."],
+["M6","Conversations longues","20 min de conversation IA d'affilée, sujets mélangés."],
+["M6","Penser en anglais","Décris à voix haute ce que tu fais dans la journée, en anglais."],
+["M6","Situations surprises","Demande à l'IA de te mettre dans des situations imprévues."],
+["M6","Bilan final","Refais les phrases du mois 1 : mesure le chemin parcouru. 🎉"]
+];
+
+/* ================== STATE ================== */
+const DAILY_GOAL = 30;
+const defaultState = {key:"",level:"beginner",rate:0.95,voiceURI:"",xp:0,startDate:"",
+  streak:{count:0,last:""},todayXP:0,todayDate:"",convoCount:0,cardCount:0,srs:{}};
+let S = loadState();
+if(!S.startDate){ S.startDate = new Date().toISOString().slice(0,10); }
+function loadState(){
+  try{ return Object.assign({}, defaultState, JSON.parse(localStorage.getItem("parlerAnglais")||"{}")); }
+  catch(e){ return {...defaultState}; }
+}
+function save(){ localStorage.setItem("parlerAnglais", JSON.stringify(S)); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+function addXP(n){
+  const t = todayStr();
+  if(S.todayDate !== t){ S.todayDate = t; S.todayXP = 0; }
+  if(S.streak.last !== t){
+    const y = new Date(Date.now()-864e5).toISOString().slice(0,10);
+    S.streak.count = (S.streak.last === y) ? S.streak.count+1 : 1;
+    S.streak.last = t;
+  }
+  S.xp += n; S.todayXP += n;
+  save(); renderHeader();
+  toast("+"+n+" XP");
+}
+function renderHeader(){
+  document.getElementById("streakNum").textContent = S.streak.count;
+  document.getElementById("xpNum").textContent = S.xp;
+}
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove("show"), 1600);
+}
+
+/* ================== VOIX (TTS) ================== */
+let voices = [];
+function loadVoices(){
+  voices = speechSynthesis.getVoices().filter(v=>v.lang.startsWith("en"));
+  const sel = document.getElementById("voiceSel");
+  sel.innerHTML = voices.map(v=>`<option value="${v.voiceURI}">${v.name} (${v.lang})</option>`).join("") || "<option>Voix par défaut</option>";
+  if(S.voiceURI && voices.some(v=>v.voiceURI===S.voiceURI)) sel.value = S.voiceURI;
+}
+speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+function speak(text, rate){
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "en-US";
+  u.rate = rate || S.rate;
+  const v = voices.find(v=>v.voiceURI===S.voiceURI) || voices.find(v=>/en[-_]US/i.test(v.lang)) || voices[0];
+  if(v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+
+/* ================== RECONNAISSANCE (STT) ================== */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function listen(onResult, onEnd, onErr){
+  if(!SR){ onErr("La reconnaissance vocale n'est pas disponible sur ce navigateur. Utilise Safari sur iPhone."); return null; }
+  const r = new SR();
+  r.lang = "en-US"; r.interimResults = false; r.maxAlternatives = 1;
+  r.onresult = e => onResult(e.results[0][0].transcript);
+  r.onend = onEnd || (()=>{});
+  r.onerror = e => onErr && onErr(e.error==="not-allowed" ? "Autorise le micro dans les réglages Safari." : "Je n'ai pas entendu, réessaie.");
+  try{ r.start(); }catch(e){}
+  return r;
+}
+
+/* ================== NAVIGATION ================== */
+document.querySelectorAll("nav button").forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    document.getElementById("screen-"+b.dataset.screen).classList.add("active");
+    if(b.dataset.screen==="cards") nextCard();
+    if(b.dataset.screen==="write" && wIdx===-1) newWriteExercise();
+    if(b.dataset.screen==="progress") renderProgress();
+    if(b.dataset.screen==="talk") checkKeyWarn();
+  };
+});
+
+/* ================== CONVERSATION IA ================== */
+let history = []; // {role:"user"/"model", text}
+let currentTopic = "everyday small talk";
+const chatBox = document.getElementById("chatBox");
+
+function checkKeyWarn(){
+  document.getElementById("noKeyWarn").style.display = S.key ? "none" : "block";
+}
+checkKeyWarn();
+
+function addMsg(role, text, tip){
+  const d = document.createElement("div");
+  d.className = "msg " + (role==="me" ? "me" : "ai");
+  d.innerHTML = `<div>${escapeHtml(text)}</div>`;
+  if(tip) d.innerHTML += `<div class="tip">💡 ${escapeHtml(tip)}</div>`;
+  if(role==="ai"){
+    const b = document.createElement("button");
+    b.className = "speak-again"; b.textContent = "🔊 Réécouter";
+    b.onclick = ()=>speak(text);
+    d.appendChild(b);
+  }
+  chatBox.appendChild(d);
+  d.scrollIntoView({behavior:"smooth", block:"end"});
+}
+function escapeHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+document.querySelectorAll("#topicChips button").forEach(b=>{
+  b.onclick = ()=>{
+    currentTopic = b.dataset.topic;
+    history = []; chatBox.innerHTML = "";
+    sendToAI("(Start the conversation about this topic. Greet me and ask me a first question.)", true);
+  };
+});
+
+async function sendToAI(userText, isStart){
+  if(!S.key){ toast("Ajoute ta clé Gemini ⚙️"); checkKeyWarn(); return; }
+  if(!isStart){ addMsg("me", userText); S.convoCount++; save(); }
+  history.push({role:"user", text:userText});
+  const hint = document.getElementById("micHint");
+  hint.textContent = "L'IA réfléchit…";
+  const sys = `You are a friendly English conversation tutor for a French speaker. Level: ${S.level}.
+Topic of the conversation: ${currentTopic}.
+Rules:
+- Reply in simple English adapted to the level (beginner = very short simple sentences).
+- Maximum 2-3 sentences, then ALWAYS ask a question to keep the conversation going.
+- If the user's message contains an English mistake, give ONE short correction written in French.
+- Respond ONLY with raw JSON, no markdown: {"reply":"your English reply","tip":"correction in French or null"}`;
+  try{
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+encodeURIComponent(S.key),{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        systemInstruction:{parts:[{text:sys}]},
+        contents: history.map(m=>({role:m.role==="user"?"user":"model", parts:[{text:m.text}]})),
+        generationConfig:{temperature:0.8, maxOutputTokens:300}
+      })
+    });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.message||"Erreur API");
+    let raw = (data.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("").trim();
+    raw = raw.replace(/```json|```/g,"").trim();
+    let reply = raw, tip = null;
+    try{ const j = JSON.parse(raw); reply = j.reply||raw; tip = j.tip&&j.tip!=="null" ? j.tip : null; }catch(e){}
+    history.push({role:"model", text:reply});
+    if(history.length > 20) history = history.slice(-20);
+    addMsg("ai", reply, tip);
+    speak(reply);
+    if(!isStart) addXP(3);
+    hint.textContent = "Appuie et parle en anglais";
+  }catch(err){
+    hint.textContent = "Appuie et parle en anglais";
+    addMsg("ai", "⚠️ " + (err.message.includes("API key") ? "Clé API invalide. Vérifie dans Réglages." : "Erreur de connexion : " + err.message));
+  }
+}
+
+const micBtn = document.getElementById("micBtn");
+let rec = null;
+micBtn.onclick = ()=>{
+  if(rec){ rec.stop(); return; }
+  speechSynthesis.cancel();
+  const hint = document.getElementById("micHint");
+  micBtn.classList.add("listening");
+  hint.textContent = "Je t'écoute… parle en anglais 🎙️";
+  rec = listen(
+    txt => { sendToAI(txt); },
+    ()=>{ micBtn.classList.remove("listening"); rec = null; if(hint.textContent.includes("écoute")) hint.textContent = "Appuie et parle en anglais"; },
+    msg => { toast(msg); micBtn.classList.remove("listening"); rec = null; }
+  );
+  if(!rec){ micBtn.classList.remove("listening"); hint.textContent = "Micro indisponible — écris ton message"; }
+};
+document.getElementById("typedSend").onclick = ()=>{
+  const i = document.getElementById("typedInput");
+  if(i.value.trim()){ sendToAI(i.value.trim()); i.value=""; }
+};
+document.getElementById("typedInput").addEventListener("keydown", e=>{
+  if(e.key==="Enter") document.getElementById("typedSend").click();
+});
+
+/* ================== PRONONCIATION ================== */
+let pronLvl = 0, pronIdx = 0, pronRec = null;
+function renderPhrase(){
+  const [en, fr] = PHRASES[pronLvl][pronIdx];
+  document.getElementById("pronPhrase").textContent = en;
+  document.getElementById("pronFr").textContent = fr;
+  document.getElementById("pronResult").innerHTML = "";
+}
+document.querySelectorAll("#pronLvlTabs button").forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll("#pronLvlTabs button").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    pronLvl = +b.dataset.lvl; pronIdx = 0; renderPhrase();
+  };
+});
+document.getElementById("pronPlay").onclick = ()=>speak(PHRASES[pronLvl][pronIdx][0]);
+document.getElementById("pronSlow").onclick = ()=>speak(PHRASES[pronLvl][pronIdx][0], 0.6);
+document.getElementById("pronNext").onclick = ()=>{ pronIdx = (pronIdx+1)%PHRASES[pronLvl].length; renderPhrase(); };
+
+function normWords(s){
+  return s.toLowerCase().replace(/[^a-z0-9' ]/g," ").split(/\s+/).filter(Boolean);
+}
+document.getElementById("pronRecord").onclick = ()=>{
+  const btn = document.getElementById("pronRecord");
+  if(pronRec){ pronRec.stop(); return; }
+  speechSynthesis.cancel();
+  btn.textContent = "🔴 J'écoute… (tape pour arrêter)";
+  pronRec = listen(
+    txt => {
+      const target = normWords(PHRASES[pronLvl][pronIdx][0]);
+      const said = normWords(txt);
+      const saidSet = new Set(said);
+      let hit = 0;
+      const html = target.map(w=>{
+        const ok = saidSet.has(w);
+        if(ok) hit++;
+        return `<span class="${ok?'ok':'ko'}">${w}</span>`;
+      }).join(" ");
+      const pct = Math.round(hit/target.length*100);
+      const emoji = pct>=90 ? "🌟" : pct>=70 ? "👍" : pct>=40 ? "💪" : "🔁";
+      document.getElementById("pronResult").innerHTML =
+        `<div class="score-badge">${emoji} ${pct}%</div>
+         <div class="score-words">${html}</div>
+         <div class="note">Tu as dit : « ${escapeHtml(txt)} »</div>`;
+      if(pct>=70) addXP(pct>=90 ? 5 : 3);
+    },
+    ()=>{ btn.textContent = "🎤 Je répète"; pronRec = null; },
+    msg => { toast(msg); btn.textContent = "🎤 Je répète"; pronRec = null; }
+  );
+  if(!pronRec) btn.textContent = "🎤 Je répète";
+};
+renderPhrase();
+
+/* ================== EXERCICES ÉCRITS ================== */
+let wMode = "order", wLvl = 0, wIdx = -1, wAnswer = [], wBank = [], wChecked = false;
+
+function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function newWriteExercise(){
+  const pool = PHRASES[wLvl];
+  let n; do{ n = Math.floor(Math.random()*pool.length); } while(n===wIdx && pool.length>1);
+  wIdx = n; wChecked = false;
+  const [en, fr] = pool[wIdx];
+  const prompt = document.getElementById("writePrompt");
+  const zone = document.getElementById("writeZone");
+  document.getElementById("writeResult").innerHTML = "";
+  document.getElementById("writeCheck").disabled = false;
+
+  if(wMode === "order"){
+    prompt.textContent = "🇫🇷 " + fr;
+    wAnswer = []; wBank = shuffle(en.replace(/[.,!?]/g,"").split(" "));
+    zone.innerHTML = '<div class="word-answer" id="wAns"></div><div class="word-bank" id="wBank"></div>';
+    renderChips();
+  }
+  else if(wMode === "translate"){
+    prompt.textContent = "🇫🇷 Traduis : " + fr;
+    zone.innerHTML = '<input class="write-input" id="wInput" type="text" placeholder="Écris en anglais…" autocomplete="off" autocapitalize="sentences">';
+  }
+  else { // dictation
+    prompt.innerHTML = '👂 Écoute et écris ce que tu entends';
+    zone.innerHTML = '<div class="row" style="margin-bottom:4px"><button class="btn-ghost" id="wPlay">🔊 Écouter</button><button class="btn-ghost" id="wPlaySlow">🐢 Lent</button></div><input class="write-input" id="wInput" type="text" placeholder="Écris la phrase…" autocomplete="off" autocapitalize="sentences">';
+    document.getElementById("wPlay").onclick = ()=>speak(en);
+    document.getElementById("wPlaySlow").onclick = ()=>speak(en, 0.6);
+    speak(en);
+  }
+}
+
+function renderChips(){
+  const ans = document.getElementById("wAns"), bank = document.getElementById("wBank");
+  ans.innerHTML = ""; bank.innerHTML = "";
+  wAnswer.forEach((w,i)=>{
+    const b = document.createElement("button");
+    b.className = "word-chip"; b.textContent = w;
+    b.onclick = ()=>{ if(wChecked) return; wAnswer.splice(i,1); wBank.push(w); renderChips(); };
+    ans.appendChild(b);
+  });
+  wBank.forEach((w,i)=>{
+    const b = document.createElement("button");
+    b.className = "word-chip"; b.textContent = w;
+    b.onclick = ()=>{ if(wChecked) return; wBank.splice(i,1); wAnswer.push(w); renderChips(); };
+    bank.appendChild(b);
+  });
+}
+
+function checkWrite(){
+  if(wChecked) return;
+  const [en, fr] = PHRASES[wLvl][wIdx];
+  const target = normWords(en);
+  const res = document.getElementById("writeResult");
+  let userWords;
+  if(wMode === "order"){
+    if(wBank.length){ toast("Utilise tous les mots !"); return; }
+    userWords = wAnswer.map(w=>w.toLowerCase().replace(/[^a-z0-9']/g,""));
+  } else {
+    const v = (document.getElementById("wInput")||{}).value || "";
+    if(!v.trim()){ toast("Écris ta réponse d'abord"); return; }
+    userWords = normWords(v);
+  }
+  wChecked = true;
+  document.getElementById("writeCheck").disabled = true;
+  const perfect = userWords.join(" ") === target.join(" ");
+  let hit = 0;
+  const uSet = new Set(userWords);
+  target.forEach(w=>{ if(uSet.has(w)) hit++; });
+  const pct = Math.round(hit/target.length*100);
+  if(perfect){
+    res.innerHTML = '<div class="good">✅ Parfait !</div><div style="margin-top:4px">'+escapeHtml(en)+'</div>';
+    addXP(4);
+  } else if(pct >= 70){
+    res.innerHTML = '<div class="good">👍 Presque ! ('+pct+'%)</div><div style="margin-top:4px">Bonne réponse : <b>'+escapeHtml(en)+'</b></div>';
+    addXP(2);
+  } else {
+    res.innerHTML = '<div class="bad">🔁 À retravailler ('+pct+'%)</div><div style="margin-top:4px">Bonne réponse : <b>'+escapeHtml(en)+'</b></div>';
+  }
+  res.innerHTML += '<button class="speak-again" style="display:block;margin-top:8px" onclick="speak('+JSON.stringify(en).replace(/"/g,"&quot;")+')">🔊 Écouter la phrase</button>';
+}
+
+document.getElementById("writeCheck").onclick = checkWrite;
+document.getElementById("writeNext").onclick = newWriteExercise;
+document.querySelectorAll("#writeModeTabs button").forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll("#writeModeTabs button").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active"); wMode = b.dataset.mode; newWriteExercise();
+  };
+});
+document.querySelectorAll("#writeLvlTabs button").forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll("#writeLvlTabs button").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active"); wLvl = +b.dataset.lvl; wIdx = -1; newWriteExercise();
+  };
+});
+document.addEventListener("keydown", e=>{
+  if(e.key==="Enter" && document.getElementById("screen-write").classList.contains("active") && document.activeElement && document.activeElement.id==="wInput"){ checkWrite(); }
+});
+
+/* ================== CARTES (SRS) ================== */
+let currentCardId = null;
+function srsKey(i){ return VOCAB[i][1]; }
+function getDue(){
+  const now = Date.now();
+  const due = [];
+  VOCAB.forEach((c,i)=>{
+    const r = S.srs[srsKey(i)];
+    if(!r || r.due <= now) due.push(i);
+  });
+  return due;
+}
+function nextCard(){
+  const due = getDue();
+  document.getElementById("dueCount").textContent = due.length ? due.length+" carte(s) à réviser" : "";
+  const fc = document.getElementById("flashcard");
+  document.getElementById("cardBackZone").style.display = "none";
+  document.getElementById("gradeRow").style.display = "none";
+  document.getElementById("cardReveal").style.display = "block";
+  if(!due.length){
+    currentCardId = null;
+    document.getElementById("cardFront").textContent = "✅ Tout est révisé ! Reviens plus tard ou va discuter 💬";
+    document.getElementById("cardReveal").style.display = "none";
+    return;
+  }
+  currentCardId = due[Math.floor(Math.random()*due.length)];
+  document.getElementById("cardFront").textContent = VOCAB[currentCardId][0];
+}
+document.getElementById("cardReveal").onclick = ()=>{
+  if(currentCardId===null) return;
+  const [fr,en,ex] = VOCAB[currentCardId];
+  document.getElementById("cardBack").textContent = en;
+  document.getElementById("cardExample").textContent = ex;
+  document.getElementById("cardBackZone").style.display = "block";
+  document.getElementById("cardReveal").style.display = "none";
+  document.getElementById("gradeRow").style.display = "flex";
+  speak(en);
+};
+document.getElementById("cardSpeak").onclick = ()=>{
+  if(currentCardId!==null) speak(VOCAB[currentCardId][1] + ". " + VOCAB[currentCardId][2]);
+};
+document.querySelectorAll(".grade-row button").forEach(b=>{
+  b.onclick = ()=>{
+    if(currentCardId===null) return;
+    const g = +b.dataset.g;
+    const r = S.srs[srsKey(currentCardId)] || {interval:0};
+    const DAY = 864e5;
+    if(g===0){ r.interval = 0; r.due = Date.now() + 10*60*1000; }
+    else if(g===1){ r.interval = r.interval ? r.interval*2.2 : 1; r.due = Date.now() + r.interval*DAY; }
+    else { r.interval = r.interval ? r.interval*3 : 3; r.due = Date.now() + r.interval*DAY; }
+    S.srs[srsKey(currentCardId)] = r;
+    S.cardCount++;
+    save();
+    if(g>0) addXP(2);
+    nextCard();
+  };
+});
+
+/* ================== PLAN & PROGRÈS ================== */
+function currentWeek(){
+  const start = new Date(S.startDate+"T00:00:00");
+  return Math.min(24, Math.max(1, Math.floor((Date.now()-start)/(7*864e5)) + 1));
+}
+function renderPlan(){
+  const w = currentWeek();
+  document.getElementById("planList").innerHTML = PLAN.map((p,i)=>{
+    const n = i+1, now = n===w, done = n<w;
+    return `<div class="card" style="padding:12px 14px;${now?'border-color:var(--orange);background:var(--orange-soft)':''};${done?'opacity:.55':''}">
+      <div style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:1px">${p[0]} · SEMAINE ${n} ${now?'· <span style="color:var(--orange)">EN COURS</span>':done?'· ✓':''}</div>
+      <div style="font-weight:800;margin:3px 0">${p[1]}</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.45">${p[2]}</div>
+    </div>`;
+  }).join("");
+}
+function exportForClaude(){
+  const difficiles = [], maitrises = [];
+  VOCAB.forEach((v,i)=>{
+    const r = S.srs[v[1]];
+    if(r){ if(r.interval < 2) difficiles.push(v[1]+" ("+v[0]+")"); else if(r.interval >= 6) maitrises.push(v[1]); }
+  });
+  const data = {
+    type: "progression-parler-anglais",
+    instructionsPourClaude: "Analyse cette progression et renvoie un fichier JSON de mise à jour au format {type:'maj', v:<numero>, vocab:[[fr,en,exemple],...], phrases:[[ [en,fr],... niveau débutant],[...intermédiaire],[...avancé]]} avec du contenu adapté à la semaine du plan et aux mots difficiles.",
+    date: todayStr(),
+    semaineDuPlan: currentWeek(),
+    themeSemaine: PLAN[currentWeek()-1][1],
+    niveau: S.level,
+    xp: S.xp, streak: S.streak.count,
+    messagesParles: S.convoCount, cartesRevisees: S.cardCount,
+    motsDifficiles: difficiles,
+    motsMaitrises: maitrises.length + " / " + VOCAB.length,
+    versionContenu: EXTRA.v
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "progression-"+todayStr()+".json";
+  a.click();
+  toast("Envoie ce fichier à Claude 📤");
+}
+document.getElementById("exportClaude").onclick = exportForClaude;
+function renderProgress(){
+  renderPlan();
+  if(S.todayDate !== todayStr()){ S.todayDate = todayStr(); S.todayXP = 0; save(); }
+  document.getElementById("stXp").textContent = S.xp;
+  document.getElementById("stStreak").textContent = S.streak.count;
+  document.getElementById("stConvo").textContent = S.convoCount;
+  document.getElementById("stCards").textContent = S.cardCount;
+  const pct = Math.min(100, Math.round(S.todayXP/DAILY_GOAL*100));
+  document.getElementById("goalTxt").textContent = S.todayXP+" / "+DAILY_GOAL+" XP aujourd'hui "+(pct>=100?"🎉 Objectif atteint !":"");
+  document.getElementById("goalBar").style.width = pct+"%";
+}
+
+/* ================== RÉGLAGES ================== */
+const $key = document.getElementById("apiKey");
+$key.value = S.key;
+function keyOk(){ document.getElementById("keyOk").innerHTML = S.key ? '<span class="ok-dot">✓ enregistrée</span>' : ""; }
+keyOk();
+$key.onchange = ()=>{ S.key = $key.value.trim(); save(); keyOk(); checkKeyWarn(); toast("Clé enregistrée"); };
+const $lvl = document.getElementById("levelSel");
+$lvl.value = S.level;
+$lvl.onchange = ()=>{ S.level = $lvl.value; save(); };
+const $rate = document.getElementById("rateSlider");
+$rate.value = S.rate;
+document.getElementById("rateVal").textContent = S.rate;
+$rate.oninput = ()=>{ S.rate = +$rate.value; document.getElementById("rateVal").textContent = S.rate; save(); };
+document.getElementById("voiceSel").onchange = e=>{ S.voiceURI = e.target.value; save(); };
+document.getElementById("testVoice").onclick = ()=>speak("Hello Hamid! This is your English voice. Let's practice together.");
+
+document.getElementById("exportBtn").onclick = ()=>{
+  const blob = new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "parler-anglais-"+todayStr()+".json";
+  a.click();
+};
+document.getElementById("importBtn").onclick = ()=>document.getElementById("importFile").click();
+document.getElementById("importFile").onchange = e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const fr = new FileReader();
+  fr.onload = ()=>{
+    try{
+      const j = JSON.parse(fr.result);
+      if(j.type === "maj"){
+        // Mise à jour de contenu envoyée par Claude
+        (j.vocab||[]).forEach(v=>{ if(!EXTRA.vocab.some(x=>x[1]===v[1]) && !VOCAB.some(x=>x[1]===v[1])) EXTRA.vocab.push(v); });
+        (j.phrases||[]).forEach((arr,l)=>{ if(EXTRA.phrases[l]) arr.forEach(p=>{ if(!EXTRA.phrases[l].some(x=>x[0]===p[0])) EXTRA.phrases[l].push(p); }); });
+        EXTRA.v = j.v || (EXTRA.v+1);
+        localStorage.setItem("paExtra", JSON.stringify(EXTRA));
+        alert("✅ Mise à jour v"+EXTRA.v+" installée : "+(j.vocab||[]).length+" mots et "+(j.phrases||[]).flat().length+" phrases ajoutés !");
+        location.reload();
+      } else if(j.xp !== undefined && j.srs !== undefined){
+        S = Object.assign({}, defaultState, j); save(); location.reload();
+      } else { toast("Format de fichier non reconnu"); }
+    }
+    catch(err){ toast("Fichier invalide"); }
+  };
+  fr.readAsText(f);
+};
+
+renderHeader();
+renderProgress();
+</script>
+</body>
+</html>
