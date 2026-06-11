@@ -202,7 +202,7 @@ input[type=range]{width:100%; accent-color:var(--orange)}
 <!-- ============ CONVERSATION ============ -->
 <section class="screen active" id="screen-talk">
   <div id="noKeyWarn" class="warn" style="display:none">
-    🔑 Ajoute ta clé Gemini gratuite dans <b>Réglages</b> pour activer la conversation IA. Le reste de l'app fonctionne sans.
+    🔑 Ajoute ta clé Groq gratuite dans <b>Réglages</b> pour activer la conversation IA. Le reste de l'app fonctionne sans.
   </div>
   <div class="chips" id="topicChips">
     <button data-topic="everyday small talk (weather, weekend, plans, food)">☕ Small talk</button>
@@ -323,13 +323,15 @@ input[type=range]{width:100%; accent-color:var(--orange)}
 <section class="screen" id="screen-settings">
   <h2>Réglages</h2>
   <div class="card">
-    <label>Clé API Gemini (gratuite) <span id="keyOk"></span></label>
-    <input type="password" id="apiKey" placeholder="AIza...">
+    <label style="margin-top:0">Clé API Groq — recommandé, gratuit <span id="groqOk"></span></label>
+    <input type="password" id="groqKey" placeholder="gsk_...">
     <div class="note">
-      1. Va sur <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a><br>
-      2. Connecte-toi avec un compte Google → « Create API key »<br>
-      3. Colle la clé ici. C'est gratuit et stocké uniquement sur ton téléphone.
+      1. Va sur <a href="https://console.groq.com/keys" target="_blank">console.groq.com/keys</a><br>
+      2. Crée un compte (email ou Google, sans carte bancaire) → « Create API key »<br>
+      3. Colle la clé ici. 1 000 conversations/jour gratuites, stockée uniquement sur ton téléphone.
     </div>
+    <label>Clé API Gemini (secours, optionnel) <span id="keyOk"></span></label>
+    <input type="password" id="apiKey" placeholder="AIza...">
     <label>Mon niveau (pour l'IA)</label>
     <select id="levelSel">
       <option value="beginner">Débutant — phrases courtes et simples</option>
@@ -538,7 +540,7 @@ const PLAN = [
 
 /* ================== STATE ================== */
 const DAILY_GOAL = 30;
-const defaultState = {key:"",level:"beginner",rate:0.95,voiceURI:"",xp:0,startDate:"",
+const defaultState = {key:"",groqKey:"",level:"beginner",rate:0.95,voiceURI:"",xp:0,startDate:"",
   streak:{count:0,last:""},todayXP:0,todayDate:"",convoCount:0,cardCount:0,srs:{}};
 let S = loadState();
 if(!S.startDate){ S.startDate = new Date().toISOString().slice(0,10); }
@@ -625,7 +627,7 @@ let currentTopic = "everyday small talk";
 const chatBox = document.getElementById("chatBox");
 
 function checkKeyWarn(){
-  document.getElementById("noKeyWarn").style.display = S.key ? "none" : "block";
+  document.getElementById("noKeyWarn").style.display = (S.groqKey || S.key) ? "none" : "block";
 }
 checkKeyWarn();
 
@@ -654,7 +656,7 @@ document.querySelectorAll("#topicChips button").forEach(b=>{
 });
 
 async function sendToAI(userText, isStart){
-  if(!S.key){ toast("Ajoute ta clé Gemini ⚙️"); checkKeyWarn(); return; }
+  if(!S.groqKey && !S.key){ toast("Ajoute ta clé Groq ⚙️"); checkKeyWarn(); return; }
   if(!isStart){ addMsg("me", userText); S.convoCount++; save(); }
   history.push({role:"user", text:userText});
   const hint = document.getElementById("micHint");
@@ -667,17 +669,42 @@ Rules:
 - If the user's message contains an English mistake, give ONE short correction written in French.
 - Respond ONLY with raw JSON, no markdown: {"reply":"your English reply","tip":"correction in French or null"}`;
   try{
-    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+encodeURIComponent(S.key),{
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({
+    let raw = "", lastErr = "";
+    if(S.groqKey){
+      // ===== GROQ (gratuit, 1000 requêtes/jour) =====
+      const GROQ_MODELS = ["llama-3.3-70b-versatile","llama-3.1-8b-instant","openai/gpt-oss-120b"];
+      const msgs = [{role:"system", content:sys}, ...history.map(m=>({role:m.role==="user"?"user":"assistant", content:m.text}))];
+      const tryOrder = S.model && GROQ_MODELS.includes(S.model) ? [S.model, ...GROQ_MODELS.filter(m=>m!==S.model)] : GROQ_MODELS;
+      for(const model of tryOrder){
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions",{
+          method:"POST",
+          headers:{"Content-Type":"application/json","Authorization":"Bearer "+S.groqKey},
+          body: JSON.stringify({model, messages:msgs, temperature:0.8, max_tokens:300})
+        });
+        const d = await res.json();
+        if(!d.error){ raw = (d.choices?.[0]?.message?.content||"").trim(); if(S.model!==model){ S.model=model; save(); } break; }
+        lastErr = d.error.message || "Erreur API Groq";
+        if(/api key|invalid/i.test(lastErr)) break;
+      }
+    } else {
+      // ===== GEMINI (secours) =====
+      const G_MODELS = ["gemini-2.5-flash-lite","gemini-2.5-flash"];
+      const body = JSON.stringify({
         systemInstruction:{parts:[{text:sys}]},
         contents: history.map(m=>({role:m.role==="user"?"user":"model", parts:[{text:m.text}]})),
         generationConfig:{temperature:0.8, maxOutputTokens:300}
-      })
-    });
-    const data = await res.json();
-    if(data.error) throw new Error(data.error.message||"Erreur API");
-    let raw = (data.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("").trim();
+      });
+      for(const model of G_MODELS){
+        const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent?key="+encodeURIComponent(S.key),{
+          method:"POST", headers:{"Content-Type":"application/json"}, body
+        });
+        const d = await res.json();
+        if(!d.error){ raw = (d.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("").trim(); break; }
+        lastErr = d.error.message || "Erreur API Gemini";
+        if(/API key/i.test(lastErr)) break;
+      }
+    }
+    if(!raw) throw new Error(lastErr || "Pas de réponse");
     raw = raw.replace(/```json|```/g,"").trim();
     let reply = raw, tip = null;
     try{ const j = JSON.parse(raw); reply = j.reply||raw; tip = j.tip&&j.tip!=="null" ? j.tip : null; }catch(e){}
@@ -689,7 +716,7 @@ Rules:
     hint.textContent = "Appuie et parle en anglais";
   }catch(err){
     hint.textContent = "Appuie et parle en anglais";
-    addMsg("ai", "⚠️ " + (err.message.includes("API key") ? "Clé API invalide. Vérifie dans Réglages." : "Erreur de connexion : " + err.message));
+    addMsg("ai", "⚠️ " + (/api key|invalid/i.test(err.message) ? "Clé API invalide. Vérifie dans Réglages." : /quota|rate/i.test(err.message) ? "Limite atteinte, réessaie dans une minute." : "Erreur : " + err.message));
   }
 }
 
@@ -985,6 +1012,11 @@ function renderProgress(){
 }
 
 /* ================== RÉGLAGES ================== */
+const $gkey = document.getElementById("groqKey");
+$gkey.value = S.groqKey;
+function groqOk(){ document.getElementById("groqOk").innerHTML = S.groqKey ? '<span class="ok-dot">✓ enregistrée</span>' : ""; }
+groqOk();
+$gkey.onchange = ()=>{ S.groqKey = $gkey.value.trim(); S.model=""; save(); groqOk(); checkKeyWarn(); toast("Clé Groq enregistrée"); };
 const $key = document.getElementById("apiKey");
 $key.value = S.key;
 function keyOk(){ document.getElementById("keyOk").innerHTML = S.key ? '<span class="ok-dot">✓ enregistrée</span>' : ""; }
